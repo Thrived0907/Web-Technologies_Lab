@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Task Board</title>
+    <style>
+        body { font-family: sans-serif; }
+        .container { display: flex; gap: 15px; }
+        .box {
+            width: 220px;
+            border: 2px solid gray;
+            min-height: 250px;
+            padding: 10px;
+        }
+        .card {
+            background: #ddd;
+            margin: 6px;
+            padding: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Task Manager</h2>
+
+<input id="taskName" placeholder="Task name">
+<button onclick="createTask()">Add</button>
+
+<div class="container">
+    <div class="box" id="todo" ondrop="dropTask(event)" ondragover="allow(event)">
+        <h4>To Do</h4>
+    </div>
+    <div class="box" id="doing" ondrop="dropTask(event)" ondragover="allow(event)">
+        <h4>In Progress</h4>
+    </div>
+    <div class="box" id="done" ondrop="dropTask(event)" ondragover="allow(event)">
+        <h4>Completed</h4>
+    </div>
+</div>
+
+<script>
+var id = 1;
+
+function createTask() {
+    var name = document.getElementById("taskName").value;
+    if (name === "") return;
+
+    var div = document.createElement("div");
+    div.className = "card";
+    div.id = "c" + id;
+    div.draggable = true;
+    div.ondragstart = dragTask;
+    div.innerText = name + " (" + new Date().toDateString() + ")";
+
+    document.getElementById("todo").appendChild(div);
+    document.getElementById("taskName").value = "";
+    id++;
+}
+
+function allow(e) {
+    e.preventDefault();
+}
+
+function dragTask(e) {
+    e.dataTransfer.setData("task", e.target.id);
+}
+
+function dropTask(e) {
+    e.preventDefault();
+    var data = e.dataTransfer.getData("task");
+    var item = document.getElementById(data);
+    e.target.appendChild(item);
+
+    if (e.target.id === "done") {
+        item.style.background = "lightgreen";
+        alert("Task Completed Successfully");
+    }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Media Player</title>
+</head>
+<body>
+
+<h1>Multimedia Page</h1>
+
+<h3>Audio Section</h3>
+<audio id="aud" controls>
+    <source src="audio.mp3">
+</audio>
+<div>Playing Time: <span id="aTime">0.0</span> sec</div>
+
+<h3>Video Section</h3>
+<video id="vid" width="420" controls>
+    <source src="video.mp4">
+</video>
+<div>Playing Time: <span id="vTime">0.0</span> sec</div>
+
+<script>
+var aud = document.getElementById("aud");
+var vid = document.getElementById("vid");
+
+setInterval(function () {
+    if (!aud.paused)
+        document.getElementById("aTime").innerText = aud.currentTime.toFixed(1);
+}, 500);
+
+setInterval(function () {
+    if (!vid.paused)
+        document.getElementById("vTime").innerText = vid.currentTime.toFixed(1);
+}, 500);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User System</title>
+</head>
+<body>
+
+<h2>Register User</h2>
+
+<input id="uname" placeholder="Name"><br><br>
+<input id="uemail" placeholder="Email"><br><br>
+<input id="umobile" placeholder="Mobile"><br><br>
+<input id="upass" type="password" placeholder="Password"><br><br>
+
+<button onclick="saveUser()">Submit</button>
+<button onclick="wipe()">Clear Storage</button>
+
+<h2>User List</h2>
+
+<table border="1">
+    <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Mobile</th>
+        <th>Remove</th>
+    </tr>
+    <tbody id="list"></tbody>
+</table>
+
+<script>
+function fetch() {
+    return JSON.parse(localStorage.getItem("data")) || [];
+}
+
+function saveUser() {
+    var n = uname.value;
+    var e = uemail.value;
+    var m = umobile.value;
+    var p = upass.value;
+
+    if (!n || !e || !m || !p) return;
+    if (m.length != 10 || p.length < 6) return;
+
+    var users = fetch();
+    for (var i of users)
+        if (i.email === e) return;
+
+    users.push({ name: n, email: e, mobile: m });
+    localStorage.setItem("data", JSON.stringify(users));
+    show();
+}
+
+function show() {
+    var users = fetch();
+    list.innerHTML = "";
+    users.forEach(function (u, i) {
+        list.innerHTML +=
+            "<tr><td>" + u.name + "</td><td>" + u.email + "</td><td>" +
+            u.mobile + "</td><td><button onclick='removeUser(" + i + ")'>Delete</button></td></tr>";
+    });
+}
+
+function removeUser(i) {
+    var users = fetch();
+    users.splice(i, 1);
+    localStorage.setItem("data", JSON.stringify(users));
+    show();
+}
+
+function wipe() {
+    localStorage.clear();
+    show();
+}
+
+show();
+</script>
+
+</body>
+</html>
+
