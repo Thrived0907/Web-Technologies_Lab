@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Intelligent Shopping Cart</title>
+
+<style>
+body {
+    font-family: "Segoe UI", Arial;
+    background: linear-gradient(135deg,#667eea,#764ba2);
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.container {
+    background: #ffffff;
+    width: 700px;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+h2 {
+    text-align: center;
+    color: #333;
+}
+.products {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+.products button {
+    background: #4f46e5;
+    color: white;
+    border: none;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.products button:hover {
+    background: #4338ca;
+}
+.cart-item {
+    background: #f8fafc;
+    border-left: 5px solid #4f46e5;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.cart-item input {
+    width: 60px;
+    padding: 5px;
+}
+.cart-item button {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 5px;
+}
+.cart-item button:hover {
+    background: #dc2626;
+}
+.coupon {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+.coupon input {
+    flex: 1;
+    padding: 8px;
+}
+.coupon button {
+    background: #16a34a;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+}
+.coupon button:hover {
+    background: #15803d;
+}
+.error {
+    color: #dc2626;
+    margin-top: 5px;
+}
+.success {
+    color: #16a34a;
+    margin-top: 5px;
+}
+.summary {
+    background: #f1f5f9;
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 8px;
+}
+.summary h3 {
+    margin: 0;
+    color: #111827;
+}
+.badge {
+    display: inline-block;
+    background: #e0e7ff;
+    color: #3730a3;
+    padding: 4px 8px;
+    margin: 4px 3px 0 0;
+    border-radius: 12px;
+    font-size: 12px;
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+<h2>🛒 Intelligent Shopping Cart</h2>
+
+<div class="products">
+<button onclick="addItem('Laptop',50000,'electronics')">Laptop</button>
+<button onclick="addItem('Headphones',2000,'electronics')">Headphones</button>
+<button onclick="addItem('Notebook',100,'stationery')">Notebook</button>
+<button onclick="addItem('Pen',20,'stationery')">Pen</button>
+</div>
+
+<div id="cart"></div>
+
+<div class="coupon">
+<input id="coupon" placeholder="Enter Coupon Code">
+<button onclick="applyCoupon()">Apply</button>
+</div>
+<div id="couponMsg"></div>
+
+<div class="summary">
+<h3 id="total">Total Payable: ₹0</h3>
+<div id="discountInfo"></div>
+</div>
+</div>
+
+<script>
+let items = []
+let couponDiscount = 0
+
+function addItem(name, price, category) {
+    const item = items.find(p => p.name === name)
+    if (item) item.qty++
+    else items.push({ name, price, qty: 1, category })
+    render()
+}
+
+function removeItem(name) {
+    items = items.filter(p => p.name !== name)
+    render()
+}
+
+function updateQty(name, qty) {
+    if (qty <= 0) {
+        discountInfo.innerText = "Quantity must be at least 1"
+        discountInfo.className = "error"
+        return
+    }
+    items.find(p => p.name === name).qty = parseInt(qty)
+    render()
+}
+
+function applyCoupon() {
+    const code = coupon.value.trim().toUpperCase()
+    couponDiscount = 0
+
+    if (code === "") {
+        couponMsg.innerText = "Coupon code required"
+        couponMsg.className = "error"
+        return
+    }
+
+    if (code === "SAVE10") couponDiscount = 10
+    else if (code.startsWith("BIG")) couponDiscount = 15
+    else {
+        couponMsg.innerText = "Invalid coupon code"
+        couponMsg.className = "error"
+        return
+    }
+
+    couponMsg.innerText = "Coupon applied successfully"
+    couponMsg.className = "success"
+    render()
+}
+
+function calculateDiscount(subtotal) {
+    let discount = 0
+    let info = []
+
+    items.forEach(p => {
+        if (p.qty >= 5) {
+            discount += p.price * p.qty * 0.1
+            info.push(p.name + " Bulk Discount")
+        }
+        if (p.category === "electronics") {
+            discount += p.price * p.qty * 0.05
+            info.push(p.name + " Electronics Discount")
+        }
+    })
+
+    const hour = new Date().getHours()
+    if (hour >= 18 && hour <= 21) {
+        discount += subtotal * 0.05
+        info.push("Evening Time Discount")
+    }
+
+    if (couponDiscount > 0) {
+        discount += subtotal * couponDiscount / 100
+        info.push("Coupon Discount")
+    }
+
+    discountInfo.innerHTML = info.map(d => `<span class="badge">${d}</span>`).join("")
+    discountInfo.className = ""
+    return discount
+}
+
+function render() {
+    cart.innerHTML = ""
+    let subtotal = 0
+
+    items.forEach(p => {
+        subtotal += p.price * p.qty
+        cart.innerHTML += `
+        <div class="cart-item">
+            <div>${p.name} — ₹${p.price}</div>
+            <div>
+                <input type="number" min="1" value="${p.qty}"
+                onchange="updateQty('${p.name}',this.value)">
+                <button onclick="removeItem('${p.name}')">Remove</button>
+            </div>
+        </div>
+        `
+    })
+
+    const discount = calculateDiscount(subtotal)
+    total.innerText = "Total Payable: ₹" + Math.max(subtotal - discount, 0).toFixed(2)
+}
+</script>
+
+</body>
+</html>

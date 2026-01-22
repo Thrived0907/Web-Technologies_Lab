@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Multi-Step Form</title>
+
+<style>
+body {
+    font-family: "Segoe UI", Arial;
+    background: #f3f6fb;
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.container {
+    background: white;
+    width: 400px;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+h2 {
+    text-align: center;
+    color: #1f2937;
+}
+.progress-container {
+    background: #e5e7eb;
+    height: 8px;
+    border-radius: 5px;
+    margin: 20px 0;
+    overflow: hidden;
+}
+#progress {
+    height: 100%;
+    width: 0%;
+    background: #1e40af;
+    transition: width 0.3s;
+}
+.stage {
+    display: none;
+}
+input {
+    width: 100%;
+    padding: 9px;
+    margin-top: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+}
+button {
+    width: 100%;
+    margin-top: 20px;
+    padding: 10px;
+    background: #1e40af;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+<h2>Multi-Step Form</h2>
+
+<div class="progress-container">
+<div id="progress"></div>
+</div>
+
+<form>
+  <div class="stage">
+    <input id="name" placeholder="Name">
+  </div>
+
+  <div class="stage">
+    <input id="email" type="email" placeholder="Email">
+  </div>
+
+  <div class="stage">
+    <input id="age" type="number" placeholder="Age">
+  </div>
+
+  <div class="stage">
+    <input id="password" type="password" placeholder="Password">
+  </div>
+</form>
+
+<button id="nextBtn">Next</button>
+</div>
+
+<script>
+let stage = 0
+const stages = document.querySelectorAll(".stage")
+const progress = document.getElementById("progress")
+const nextBtn = document.getElementById("nextBtn")
+
+function showStage() {
+    stages.forEach((s, i) => {
+        s.style.display = i === stage ? "block" : "none"
+    })
+    progress.style.width = ((stage + 1) / stages.length) * 100 + "%"
+    nextBtn.innerText = stage === stages.length - 1 ? "Submit" : "Next"
+}
+
+function goNext() {
+    const input = stages[stage].querySelector("input")
+    if (!input.value.trim()) {
+        alert("Please complete this step")
+        return
+    }
+    if (stage < stages.length - 1) {
+        stage++
+        showStage()
+    } else {
+        alert("Form Submitted Successfully")
+    }
+}
+
+nextBtn.addEventListener("click", goNext)
+
+showStage()
+</script>
+
+</body>
+</html>

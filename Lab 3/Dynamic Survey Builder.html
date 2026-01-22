@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dynamic Survey Builder</title>
+
+<style>
+body {
+    font-family: "Segoe UI", Arial;
+    background: #f3f6fb;
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.container {
+    background: #ffffff;
+    width: 720px;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+h2 {
+    text-align: center;
+    color: #1f2937;
+    margin-bottom: 25px;
+}
+.question {
+    margin-bottom: 22px;
+}
+label {
+    font-weight: 600;
+    color: #374151;
+    display: block;
+    margin-bottom: 8px;
+}
+input[type=text] {
+    width: 100%;
+    padding: 9px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+}
+.options label {
+    font-weight: normal;
+    color: #374151;
+    margin-bottom: 5px;
+}
+.error {
+    color: #b91c1c;
+    font-size: 13px;
+    margin-top: 6px;
+    display: none;
+}
+button {
+    background: #1e40af;
+    color: white;
+    border: none;
+    padding: 12px;
+    width: 100%;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+}
+button:disabled {
+    background: #9ca3af;
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+<h2>Survey Form</h2>
+<form id="surveyForm"></form>
+<button id="submit" disabled>Submit Survey</button>
+</div>
+
+<script>
+const questions = [
+    { id: 1, text: "Your Full Name", type: "text", required: true, max: 20 },
+    { id: 2, text: "Gender", type: "radio", required: true, options: ["Male","Female","Other"] },
+    { id: 3, text: "Programming Languages Known", type: "checkbox", required: true, min: 1, options: ["Java","Python","C++","JavaScript"] }
+]
+
+const form = document.getElementById("surveyForm")
+const submit = document.getElementById("submit")
+
+questions.forEach(q => {
+    const div = document.createElement("div")
+    div.className = "question"
+
+    const label = document.createElement("label")
+    label.innerText = q.text
+    div.appendChild(label)
+
+    if (q.type === "text") {
+        const input = document.createElement("input")
+        input.type = "text"
+        input.id = "q" + q.id
+        div.appendChild(input)
+    }
+
+    if (q.type === "radio") {
+        const opt = document.createElement("div")
+        opt.className = "options"
+        q.options.forEach(o => {
+            opt.innerHTML += `<label><input type="radio" name="q${q.id}" value="${o}"> ${o}</label>`
+        })
+        div.appendChild(opt)
+    }
+
+    if (q.type === "checkbox") {
+        const opt = document.createElement("div")
+        opt.className = "options"
+        q.options.forEach(o => {
+            opt.innerHTML += `<label><input type="checkbox" name="q${q.id}" value="${o}"> ${o}</label>`
+        })
+        div.appendChild(opt)
+    }
+
+    const err = document.createElement("div")
+    err.className = "error"
+    err.id = "err" + q.id
+    div.appendChild(err)
+
+    form.appendChild(div)
+})
+
+function validate() {
+    let valid = true
+
+    questions.forEach(q => {
+        const err = document.getElementById("err" + q.id)
+        err.style.display = "none"
+
+        if (q.type === "text") {
+            const v = document.getElementById("q" + q.id).value.trim()
+            if (q.required && v === "") {
+                err.innerText = "This field is required"
+                err.style.display = "block"
+                valid = false
+            } else if (v.length > q.max) {
+                err.innerText = "Maximum " + q.max + " characters allowed"
+                err.style.display = "block"
+                valid = false
+            }
+        }
+
+        if (q.type === "radio") {
+            const checked = document.querySelector(`input[name="q${q.id}"]:checked`)
+            if (q.required && !checked) {
+                err.innerText = "Please select one option"
+                err.style.display = "block"
+                valid = false
+            }
+        }
+
+        if (q.type === "checkbox") {
+            const checked = document.querySelectorAll(`input[name="q${q.id}"]:checked`)
+            if (q.required && checked.length < q.min) {
+                err.innerText = "Select at least " + q.min + " option"
+                err.style.display = "block"
+                valid = false
+            }
+        }
+    })
+
+    submit.disabled = !valid
+}
+
+form.addEventListener("input", validate)
+
+submit.addEventListener("click", e => {
+    e.preventDefault()
+    alert("Survey Submitted Successfully")
+})
+</script>
+
+</body>
+</html>
