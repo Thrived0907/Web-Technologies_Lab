@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Library Book Tracker (XML DOM)</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        input, select { padding: 6px; margin: 5px; }
+        button { padding: 6px 10px; margin: 5px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        table, th, td { border: 1px solid #ccc; }
+        th, td { padding: 8px; text-align: center; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+
+<body>
+
+<h2>Library Book Tracker (XML + AJAX)</h2>
+
+<form id="bookForm">
+    <input type="text" id="bookId" placeholder="Book ID" required>
+    <input type="text" id="title" placeholder="Title" required>
+    <input type="text" id="author" placeholder="Author" required>
+    <select id="status">
+        <option value="Available">Available</option>
+        <option value="Not Available">Not Available</option>
+    </select>
+    <button type="submit">Add / Update Book</button>
+</form>
+
+<div id="message"></div>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="bookTable"></tbody>
+</table>
+
+<script>
+
+// Embedded XML (Simulated books.xml)
+let xmlString = `
+<library>
+    <book>
+        <id>1</id>
+        <title>Java Programming</title>
+        <author>James Gosling</author>
+        <status>Available</status>
+    </book>
+    <book>
+        <id>2</id>
+        <title>Data Structures</title>
+        <author>Mark Allen</author>
+        <status>Not Available</status>
+    </book>
+</library>
+`;
+
+let xmlDoc;
+
+// AJAX GET request simulation
+function loadXML() {
+
+    const xhr = new XMLHttpRequest();
+
+    xhr.open("GET", "data:text/xml;charset=utf-8," + encodeURIComponent(xmlString), true);
+
+    xhr.onload = function () {
+
+        if (xhr.status === 200) {
+
+            xmlDoc = xhr.responseXML;
+
+            if (!xmlDoc || xmlDoc.getElementsByTagName("parsererror").length > 0) {
+                showMessage("Malformed XML detected!", "error");
+                return;
+            }
+
+            displayBooks();
+        } else {
+            showMessage("Failed to load XML!", "error");
+        }
+    };
+
+    xhr.onerror = function () {
+        showMessage("Network Error!", "error");
+    };
+
+    xhr.send();
+}
+
+// READ
+function displayBooks() {
+
+    const tableBody = document.getElementById("bookTable");
+    tableBody.innerHTML = "";
+
+    const books = xmlDoc.getElementsByTagName("book");
+
+    if (books.length === 0) {
+        showMessage("No books available!", "error");
+        return;
+    }
+
+    for (let i = 0; i < books.length; i++) {
+
+        const id = books[i].getElementsByTagName("id")[0].textContent;
+        const title = books[i].getElementsByTagName("title")[0].textContent;
+        const author = books[i].getElementsByTagName("author")[0].textContent;
+        const status = books[i].getElementsByTagName("status")[0].textContent;
+
+        tableBody.innerHTML += `
+            <tr>
+                <td>${id}</td>
+                <td>${title}</td>
+                <td>${author}</td>
+                <td>${status}</td>
+                <td>
+                    <button onclick="editBook('${id}')">Edit</button>
+                    <button onclick="deleteBook('${id}')">Delete</button>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// CREATE / UPDATE
+document.getElementById("bookForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const id = bookId.value.trim();
+    const titleVal = title.value.trim();
+    const authorVal = author.value.trim();
+    const statusVal = status.value;
+
+    if (!id || !titleVal || !authorVal) {
+        showMessage("All fields are required!", "error");
+        return;
+    }
+
+    const books = xmlDoc.getElementsByTagName("book");
+    let existing = null;
+
+    for (let i = 0; i < books.length; i++) {
+        if (books[i].getElementsByTagName("id")[0].textContent === id) {
+            existing = books[i];
+            break;
+        }
+    }
+
+    if (existing) {
+        // UPDATE
+        existing.getElementsByTagName("title")[0].textContent = titleVal;
+        existing.getElementsByTagName("author")[0].textContent = authorVal;
+        existing.getElementsByTagName("status")[0].textContent = statusVal;
+        showMessage("Book Updated Successfully!", "success");
+    } else {
+        // CREATE
+        const newBook = xmlDoc.createElement("book");
+
+        const idNode = xmlDoc.createElement("id");
+        idNode.textContent = id;
+
+        const titleNode = xmlDoc.createElement("title");
+        titleNode.textContent = titleVal;
+
+        const authorNode = xmlDoc.createElement("author");
+        authorNode.textContent = authorVal;
+
+        const statusNode = xmlDoc.createElement("status");
+        statusNode.textContent = statusVal;
+
+        newBook.appendChild(idNode);
+        newBook.appendChild(titleNode);
+        newBook.appendChild(authorNode);
+        newBook.appendChild(statusNode);
+
+        xmlDoc.getElementsByTagName("library")[0].appendChild(newBook);
+
+        showMessage("Book Added Successfully!", "success");
+    }
+
+    this.reset();
+    displayBooks();
+});
+
+// DELETE
+function deleteBook(id) {
+
+    const books = xmlDoc.getElementsByTagName("book");
+    let found = false;
+
+    for (let i = 0; i < books.length; i++) {
+        if (books[i].getElementsByTagName("id")[0].textContent === id) {
+            books[i].parentNode.removeChild(books[i]);
+            found = true;
+            break;
+        }
+    }
+
+    if (found) {
+        showMessage("Book Deleted Successfully!", "success");
+        displayBooks();
+    } else {
+        showMessage("Book Not Found!", "error");
+    }
+}
+
+// EDIT
+function editBook(id) {
+
+    const books = xmlDoc.getElementsByTagName("book");
+
+    for (let i = 0; i < books.length; i++) {
+
+        if (books[i].getElementsByTagName("id")[0].textContent === id) {
+
+            bookId.value = id;
+            title.value = books[i].getElementsByTagName("title")[0].textContent;
+            author.value = books[i].getElementsByTagName("author")[0].textContent;
+            status.value = books[i].getElementsByTagName("status")[0].textContent;
+        }
+    }
+}
+
+// Message Display
+function showMessage(msg, type) {
+    document.getElementById("message").innerHTML =
+        `<p class="${type}">${msg}</p>`;
+}
+
+// Initial Load
+loadXML();
+
+</script>
+
+</body>
+</html>

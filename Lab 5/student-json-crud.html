@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Record System (JSON + Fetch)</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        input { padding: 6px; margin: 5px; }
+        button { padding: 6px 10px; margin: 5px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        table, th, td { border: 1px solid #ccc; }
+        th, td { padding: 8px; text-align: center; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+
+<body>
+
+<h2>Student Record System (Local JSON + Fetch API)</h2>
+
+<form id="studentForm">
+    <input type="text" id="studentId" placeholder="Student ID" required>
+    <input type="text" id="studentName" placeholder="Name" required>
+    <input type="text" id="course" placeholder="Course" required>
+    <input type="number" id="marks" placeholder="Marks" required>
+    <button type="submit">Add / Update</button>
+</form>
+
+<div id="message"></div>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Course</th>
+            <th>Marks</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="studentTable"></tbody>
+</table>
+
+<script>
+
+// Simulated students.json
+let jsonString = `
+[
+    { "id": "1", "name": "Rahul", "course": "CSE", "marks": 85 },
+    { "id": "2", "name": "Anjali", "course": "ECE", "marks": 90 }
+]
+`;
+
+let students = [];
+
+// Fetch JSON (Simulated)
+function loadStudents() {
+
+    fetch("data:application/json;charset=utf-8," + encodeURIComponent(jsonString))
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Failed to fetch JSON");
+            }
+            return response.json(); // Parse JSON
+        })
+        .then(data => {
+            students = data;
+            displayStudents();
+        })
+        .catch(error => {
+            showMessage("JSON Parsing Error or Fetch Failed!", "error");
+        });
+}
+
+// READ
+function displayStudents() {
+
+    const table = document.getElementById("studentTable");
+    table.innerHTML = "";
+
+    if (students.length === 0) {
+        showMessage("No students found!", "error");
+        return;
+    }
+
+    students.forEach(student => {
+        table.innerHTML += `
+            <tr>
+                <td>${student.id}</td>
+                <td>${student.name}</td>
+                <td>${student.course}</td>
+                <td>${student.marks}</td>
+                <td>
+                    <button onclick="editStudent('${student.id}')">Edit</button>
+                    <button onclick="deleteStudent('${student.id}')">Delete</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+// CREATE / UPDATE
+document.getElementById("studentForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const id = studentId.value.trim();
+    const name = studentName.value.trim();
+    const courseVal = course.value.trim();
+    const marksVal = marks.value.trim();
+
+    // Validation
+    if (!id || !name || !courseVal || !marksVal) {
+        showMessage("All fields are required!", "error");
+        return;
+    }
+
+    if (marksVal < 0 || marksVal > 100) {
+        showMessage("Marks must be between 0 and 100!", "error");
+        return;
+    }
+
+    const existing = students.find(s => s.id === id);
+
+    if (existing) {
+        // UPDATE
+        existing.name = name;
+        existing.course = courseVal;
+        existing.marks = marksVal;
+        showMessage("Student Updated Successfully!", "success");
+    } else {
+        // CREATE
+        students.push({ id, name, course: courseVal, marks: marksVal });
+        showMessage("Student Added Successfully!", "success");
+    }
+
+    this.reset();
+    displayStudents();
+});
+
+// DELETE
+function deleteStudent(id) {
+
+    const index = students.findIndex(s => s.id === id);
+
+    if (index === -1) {
+        showMessage("Student Not Found!", "error");
+        return;
+    }
+
+    students.splice(index, 1);
+    showMessage("Student Deleted Successfully!", "success");
+    displayStudents();
+}
+
+// EDIT
+function editStudent(id) {
+
+    const student = students.find(s => s.id === id);
+
+    if (!student) return;
+
+    studentId.value = student.id;
+    studentName.value = student.name;
+    course.value = student.course;
+    marks.value = student.marks;
+}
+
+// Message Display
+function showMessage(msg, type) {
+    document.getElementById("message").innerHTML =
+        `<p class="${type}">${msg}</p>`;
+}
+
+// Initial Load
+loadStudents();
+
+</script>
+
+</body>
+</html>

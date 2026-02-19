@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Management System (XML + AJAX)</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        input { padding: 6px; margin: 5px; }
+        button { padding: 6px 10px; margin: 5px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        table, th, td { border: 1px solid #ccc; }
+        th, td { padding: 8px; text-align: center; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+
+<body>
+
+<h2>Employee Management System (Local XML + AJAX)</h2>
+
+<form id="empForm">
+    <input type="text" id="empId" placeholder="Employee ID" required>
+    <input type="text" id="empName" placeholder="Name" required>
+    <input type="text" id="empDept" placeholder="Department" required>
+    <input type="number" id="empSalary" placeholder="Salary" required>
+    <button type="submit">Add / Update</button>
+</form>
+
+<div id="message"></div>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Salary</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="empTable"></tbody>
+</table>
+
+<script>
+
+// Embedded XML Data (Simulated Local XML File)
+let xmlString = `
+<employees>
+    <employee>
+        <id>1</id>
+        <name>Rahul</name>
+        <department>IT</department>
+        <salary>50000</salary>
+    </employee>
+    <employee>
+        <id>2</id>
+        <name>Anjali</name>
+        <department>HR</department>
+        <salary>45000</salary>
+    </employee>
+</employees>
+`;
+
+let xmlDoc;
+
+// AJAX Simulation using XMLHttpRequest
+function loadXML() {
+
+    const xhr = new XMLHttpRequest();
+
+    xhr.open("GET", "data:text/xml;charset=utf-8," + encodeURIComponent(xmlString), true);
+
+    xhr.onload = function () {
+
+        if (xhr.status === 200) {
+
+            xmlDoc = xhr.responseXML;
+
+            if (!xmlDoc || xmlDoc.getElementsByTagName("parsererror").length > 0) {
+                showMessage("Malformed XML detected!", "error");
+                return;
+            }
+
+            displayEmployees();
+        } else {
+            showMessage("Failed to load XML (Status: " + xhr.status + ")", "error");
+        }
+    };
+
+    xhr.onerror = function () {
+        showMessage("Network Error!", "error");
+    };
+
+    xhr.send();
+}
+
+// READ
+function displayEmployees() {
+
+    const tableBody = document.getElementById("empTable");
+    tableBody.innerHTML = "";
+
+    const employees = xmlDoc.getElementsByTagName("employee");
+
+    if (employees.length === 0) {
+        showMessage("No employees found!", "error");
+        return;
+    }
+
+    for (let i = 0; i < employees.length; i++) {
+
+        const id = employees[i].getElementsByTagName("id")[0].textContent;
+        const name = employees[i].getElementsByTagName("name")[0].textContent;
+        const dept = employees[i].getElementsByTagName("department")[0].textContent;
+        const salary = employees[i].getElementsByTagName("salary")[0].textContent;
+
+        tableBody.innerHTML += `
+            <tr>
+                <td>${id}</td>
+                <td>${name}</td>
+                <td>${dept}</td>
+                <td>${salary}</td>
+                <td>
+                    <button onclick="editEmployee('${id}')">Edit</button>
+                    <button onclick="deleteEmployee('${id}')">Delete</button>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// CREATE / UPDATE
+document.getElementById("empForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const id = empId.value.trim();
+    const name = empName.value.trim();
+    const dept = empDept.value.trim();
+    const salary = empSalary.value.trim();
+
+    const employees = xmlDoc.getElementsByTagName("employee");
+    let existing = null;
+
+    for (let i = 0; i < employees.length; i++) {
+        if (employees[i].getElementsByTagName("id")[0].textContent === id) {
+            existing = employees[i];
+            break;
+        }
+    }
+
+    if (existing) {
+        // UPDATE
+        existing.getElementsByTagName("name")[0].textContent = name;
+        existing.getElementsByTagName("department")[0].textContent = dept;
+        existing.getElementsByTagName("salary")[0].textContent = salary;
+        showMessage("Employee Updated Successfully (200)", "success");
+    } else {
+        // CREATE
+        const newEmp = xmlDoc.createElement("employee");
+
+        newEmp.innerHTML = `
+            <id>${id}</id>
+            <name>${name}</name>
+            <department>${dept}</department>
+            <salary>${salary}</salary>
+        `;
+
+        xmlDoc.getElementsByTagName("employees")[0].appendChild(newEmp);
+        showMessage("Employee Added Successfully (200)", "success");
+    }
+
+    this.reset();
+    displayEmployees();
+});
+
+// DELETE
+function deleteEmployee(id) {
+
+    const employees = xmlDoc.getElementsByTagName("employee");
+    let found = false;
+
+    for (let i = 0; i < employees.length; i++) {
+        if (employees[i].getElementsByTagName("id")[0].textContent === id) {
+            employees[i].parentNode.removeChild(employees[i]);
+            found = true;
+            break;
+        }
+    }
+
+    if (found) {
+        showMessage("Employee Deleted Successfully (200)", "success");
+        displayEmployees();
+    } else {
+        showMessage("Employee Not Found (404)", "error");
+    }
+}
+
+// EDIT
+function editEmployee(id) {
+
+    const employees = xmlDoc.getElementsByTagName("employee");
+
+    for (let i = 0; i < employees.length; i++) {
+
+        if (employees[i].getElementsByTagName("id")[0].textContent === id) {
+
+            empId.value = id;
+            empName.value = employees[i].getElementsByTagName("name")[0].textContent;
+            empDept.value = employees[i].getElementsByTagName("department")[0].textContent;
+            empSalary.value = employees[i].getElementsByTagName("salary")[0].textContent;
+        }
+    }
+}
+
+// Message Display
+function showMessage(msg, type) {
+    document.getElementById("message").innerHTML =
+        `<p class="${type}">${msg}</p>`;
+}
+
+// Initial Load
+loadXML();
+
+</script>
+
+</body>
+</html>

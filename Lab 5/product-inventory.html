@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Product Inventory System (JSON + Fetch)</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        input, select { padding: 6px; margin: 5px; }
+        button { padding: 6px 10px; margin: 5px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        table, th, td { border: 1px solid #ccc; }
+        th, td { padding: 8px; text-align: center; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .low-stock { background-color: #ffcccc; } /* Conditional formatting */
+        .total-box { margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+
+<body>
+
+<h2>Product Inventory System (Local JSON + Fetch API)</h2>
+
+<form id="productForm">
+    <input type="text" id="productId" placeholder="Product ID" required>
+    <input type="text" id="productName" placeholder="Name" required>
+    <input type="text" id="category" placeholder="Category" required>
+    <input type="number" id="price" placeholder="Price" required>
+    <input type="number" id="stock" placeholder="Stock Quantity" required>
+    <button type="submit">Add / Update</button>
+</form>
+
+<br>
+
+<input type="text" id="searchCategory" placeholder="Search by Category">
+<button onclick="searchByCategory()">Search</button>
+<button onclick="displayProducts()">Show All</button>
+
+<div id="message"></div>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="productTable"></tbody>
+</table>
+
+<div class="total-box" id="totalValue"></div>
+
+<script>
+
+// Simulated inventory.json
+let jsonString = `
+[
+    { "id": "1", "name": "Laptop", "category": "Electronics", "price": 55000, "stock": 5 },
+    { "id": "2", "name": "Shoes", "category": "Fashion", "price": 2000, "stock": 20 },
+    { "id": "3", "name": "Headphones", "category": "Electronics", "price": 3000, "stock": 3 }
+]
+`;
+
+let products = [];
+
+// Fetch JSON
+function loadProducts() {
+
+    fetch("data:application/json;charset=utf-8," + encodeURIComponent(jsonString))
+        .then(response => {
+            if (!response.ok) throw new Error("Failed to fetch inventory");
+            return response.json();
+        })
+        .then(data => {
+            products = data;
+            displayProducts();
+        })
+        .catch(error => {
+            showMessage("Error loading inventory JSON!", "error");
+        });
+}
+
+// READ
+function displayProducts(filteredList = products) {
+
+    const table = document.getElementById("productTable");
+    table.innerHTML = "";
+
+    if (filteredList.length === 0) {
+        showMessage("No products found!", "error");
+        updateTotalValue([]);
+        return;
+    }
+
+    filteredList.forEach(product => {
+
+        const lowStockClass = product.stock < 5 ? "low-stock" : "";
+
+        table.innerHTML += `
+            <tr class="${lowStockClass}">
+                <td>${product.id}</td>
+                <td>${product.name}</td>
+                <td>${product.category}</td>
+                <td>₹${product.price}</td>
+                <td>${product.stock}</td>
+                <td>
+                    <button onclick="editProduct('${product.id}')">Edit</button>
+                    <button onclick="deleteProduct('${product.id}')">Delete</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    updateTotalValue(filteredList);
+}
+
+// CREATE / UPDATE
+document.getElementById("productForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const id = productId.value.trim();
+    const name = productName.value.trim();
+    const categoryVal = category.value.trim();
+    const priceVal = parseFloat(price.value);
+    const stockVal = parseInt(stock.value);
+
+    // Validation
+    if (!id || !name || !categoryVal || isNaN(priceVal) || isNaN(stockVal)) {
+        showMessage("Invalid input data!", "error");
+        return;
+    }
+
+    if (priceVal <= 0 || stockVal < 0) {
+        showMessage("Price must be positive and stock cannot be negative!", "error");
+        return;
+    }
+
+    const existing = products.find(p => p.id === id);
+
+    if (existing) {
+        existing.name = name;
+        existing.category = categoryVal;
+        existing.price = priceVal;
+        existing.stock = stockVal;
+        showMessage("Product Updated Successfully!", "success");
+    } else {
+        products.push({ id, name, category: categoryVal, price: priceVal, stock: stockVal });
+        showMessage("Product Added Successfully!", "success");
+    }
+
+    this.reset();
+    displayProducts();
+});
+
+// DELETE
+function deleteProduct(id) {
+
+    const index = products.findIndex(p => p.id === id);
+
+    if (index === -1) {
+        showMessage("Product Not Found!", "error");
+        return;
+    }
+
+    products.splice(index, 1);
+    showMessage("Product Deleted Successfully!", "success");
+    displayProducts();
+}
+
+// EDIT
+function editProduct(id) {
+
+    const product = products.find(p => p.id === id);
+
+    if (!product) return;
+
+    productId.value = product.id;
+    productName.value = product.name;
+    category.value = product.category;
+    price.value = product.price;
+    stock.value = product.stock;
+}
+
+// SEARCH
+function searchByCategory() {
+
+    const searchVal = document.getElementById("searchCategory").value.trim().toLowerCase();
+
+    if (!searchVal) {
+        showMessage("Enter category to search!", "error");
+        return;
+    }
+
+    const filtered = products.filter(p =>
+        p.category.toLowerCase().includes(searchVal)
+    );
+
+    displayProducts(filtered);
+}
+
+// TOTAL INVENTORY VALUE
+function updateTotalValue(list) {
+
+    let total = 0;
+
+    list.forEach(p => {
+        total += p.price * p.stock;
+    });
+
+    document.getElementById("totalValue").innerHTML =
+        "Total Inventory Value: ₹" + total.toLocaleString();
+}
+
+// Message Display
+function showMessage(msg, type) {
+    document.getElementById("message").innerHTML =
+        `<p class="${type}">${msg}</p>`;
+}
+
+// Initial Load
+loadProducts();
+
+</script>
+
+</body>
+</html>
