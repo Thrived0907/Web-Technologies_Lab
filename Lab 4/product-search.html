@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AJAX Product Search System</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+
+        input {
+            padding: 8px;
+            width: 300px;
+            font-size: 14px;
+        }
+
+        .product {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+
+        .loading {
+            color: blue;
+            font-weight: bold;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+
+        .no-results {
+            color: orange;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Live Product Search</h2>
+
+    <input type="text" id="searchInput" placeholder="Search products...">
+
+    <div id="message"></div>
+    <div id="results"></div>
+
+    <script>
+
+        const searchInput = document.getElementById("searchInput");
+        const resultsDiv = document.getElementById("results");
+        const messageDiv = document.getElementById("message");
+
+        let debounceTimer;
+
+        // Simulated Local JSON Data (acts like backend)
+        const productData = [
+            { name: "Laptop", price: 55000, category: "Electronics" },
+            { name: "Smartphone", price: 25000, category: "Electronics" },
+            { name: "Shoes", price: 2000, category: "Fashion" },
+            { name: "Backpack", price: 1200, category: "Accessories" },
+            { name: "Headphones", price: 3000, category: "Electronics" },
+            { name: "Watch", price: 5000, category: "Fashion" }
+        ];
+
+        // Simulated AJAX fetch function
+        function fetchProducts(query) {
+
+            messageDiv.innerHTML = "<p class='loading'>Searching...</p>";
+            resultsDiv.innerHTML = "";
+
+            // Simulate server delay
+            return new Promise((resolve, reject) => {
+
+                setTimeout(() => {
+
+                    // Simulate random server error (for testing)
+                    const simulateError = false;
+
+                    if (simulateError) {
+                        reject("Server Error");
+                    } else {
+                        const filtered = productData.filter(product =>
+                            product.name.toLowerCase().includes(query.toLowerCase()) ||
+                            product.category.toLowerCase().includes(query.toLowerCase())
+                        );
+                        resolve(filtered);
+                    }
+
+                }, 800); // 800ms delay
+            });
+        }
+
+        function displayResults(products) {
+
+            resultsDiv.innerHTML = "";
+            messageDiv.innerHTML = "";
+
+            if (products.length === 0) {
+                messageDiv.innerHTML = "<p class='no-results'>No results found</p>";
+                return;
+            }
+
+            products.forEach(product => {
+                const productDiv = document.createElement("div");
+                productDiv.className = "product";
+                productDiv.innerHTML = `
+                    <strong>Product:</strong> ${product.name} <br>
+                    <strong>Price:</strong> ₹${product.price} <br>
+                    <strong>Category:</strong> ${product.category}
+                `;
+                resultsDiv.appendChild(productDiv);
+            });
+        }
+
+        function handleSearch() {
+
+            const query = searchInput.value.trim();
+
+            if (query === "") {
+                resultsDiv.innerHTML = "";
+                messageDiv.innerHTML = "";
+                return;
+            }
+
+            fetchProducts(query)
+                .then(data => displayResults(data))
+                .catch(error => {
+                    messageDiv.innerHTML = "<p class='error'>Failed to fetch products</p>";
+                });
+        }
+
+        // Debouncing implementation
+        searchInput.addEventListener("input", function () {
+
+            clearTimeout(debounceTimer);
+
+            debounceTimer = setTimeout(() => {
+                handleSearch();
+            }, 500); // 500ms delay
+        });
+
+    </script>
+
+</body>
+</html>

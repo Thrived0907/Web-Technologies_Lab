@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-Time Username Availability Checker</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+
+        input {
+            padding: 8px;
+            width: 250px;
+        }
+
+        button {
+            padding: 8px 15px;
+            margin-top: 10px;
+        }
+
+        .message {
+            margin-top: 5px;
+            font-weight: bold;
+        }
+
+        .success {
+            color: green;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .loading {
+            color: blue;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Registration Form</h2>
+
+    <form id="registerForm">
+        <label>Username:</label><br>
+        <input type="text" id="username" required>
+        <div id="feedback" class="message"></div>
+        <br>
+        <button type="submit">Register</button>
+    </form>
+
+    <script>
+        const usernameInput = document.getElementById("username");
+        const feedback = document.getElementById("feedback");
+        const form = document.getElementById("registerForm");
+
+        let isUsernameAvailable = false;
+        let debounceTimer = null;
+
+        // Simulated server-side usernames (Backend simulation)
+        const existingUsernames = ["john123", "alice", "admin", "thrived", "testuser"];
+
+        // Simulated AJAX function
+        function checkUsername(username) {
+
+            feedback.textContent = "Checking...";
+            feedback.className = "message loading";
+
+            // Simulate server delay using setTimeout
+            setTimeout(() => {
+
+                if (existingUsernames.includes(username.toLowerCase())) {
+                    feedback.textContent = "Username already taken";
+                    feedback.className = "message error";
+                    isUsernameAvailable = false;
+                } else {
+                    feedback.textContent = "Username available";
+                    feedback.className = "message success";
+                    isUsernameAvailable = true;
+                }
+
+            }, 1000); // 1 second delay (simulated server response)
+        }
+
+        // Real-time checking with debounce
+        usernameInput.addEventListener("input", function () {
+
+            const username = usernameInput.value.trim();
+
+            clearTimeout(debounceTimer);
+
+            if (username.length === 0) {
+                feedback.textContent = "";
+                isUsernameAvailable = false;
+                return;
+            }
+
+            debounceTimer = setTimeout(() => {
+                checkUsername(username);
+            }, 500); // Wait 500ms after typing
+        });
+
+        // Prevent form submission if username unavailable
+        form.addEventListener("submit", function (event) {
+
+            if (!isUsernameAvailable) {
+                event.preventDefault();
+                alert("Please choose an available username before submitting.");
+            } else {
+                alert("Registration Successful!");
+            }
+        });
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AJAX CRUD - Student Management</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 40px;
+        }
+
+        input {
+            padding: 6px;
+            margin: 5px;
+        }
+
+        button {
+            padding: 6px 10px;
+            margin: 5px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+
+<body>
+
+<h2>Student Management System (AJAX CRUD)</h2>
+
+<form id="studentForm">
+    <input type="text" id="studentId" placeholder="Student ID" required>
+    <input type="text" id="name" placeholder="Name" required>
+    <input type="text" id="department" placeholder="Department" required>
+    <input type="number" id="marks" placeholder="Marks" required>
+    <button type="submit">Add / Update Student</button>
+</form>
+
+<div id="message"></div>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Marks</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="studentTableBody"></tbody>
+</table>
+
+<script>
+
+let students = [
+    { id: "101", name: "Rahul", department: "CSE", marks: 85 },
+    { id: "102", name: "Anjali", department: "ECE", marks: 90 }
+];
+
+const form = document.getElementById("studentForm");
+const tableBody = document.getElementById("studentTableBody");
+const messageDiv = document.getElementById("message");
+
+// Simulated AJAX Response Handler
+function simulateResponse(data, status = 200) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            if (status === 200) {
+                resolve({ status: 200, json: () => Promise.resolve(data) });
+            } else if (status === 404) {
+                reject({ status: 404, message: "Student Not Found" });
+            } else {
+                reject({ status: 500, message: "Server Error" });
+            }
+        }, 500);
+    });
+}
+
+// READ (Fetch Students)
+function fetchStudents() {
+    simulateResponse(students, 200)
+        .then(response => response.json())
+        .then(data => {
+            tableBody.innerHTML = "";
+            data.forEach(student => {
+                tableBody.innerHTML += `
+                    <tr>
+                        <td>${student.id}</td>
+                        <td>${student.name}</td>
+                        <td>${student.department}</td>
+                        <td>${student.marks}</td>
+                        <td>
+                            <button onclick="editStudent('${student.id}')">Edit</button>
+                            <button onclick="deleteStudent('${student.id}')">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        });
+}
+
+// CREATE or UPDATE
+form.addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const id = studentId.value.trim();
+    const name = document.getElementById("name").value.trim();
+    const department = document.getElementById("department").value.trim();
+    const marks = document.getElementById("marks").value.trim();
+
+    const existingStudent = students.find(s => s.id === id);
+
+    if (existingStudent) {
+        // UPDATE
+        existingStudent.name = name;
+        existingStudent.department = department;
+        existingStudent.marks = marks;
+
+        simulateResponse({ message: "Student Updated Successfully" }, 200)
+            .then(res => res.json())
+            .then(data => showMessage(data.message, "success"));
+
+    } else {
+        // CREATE
+        students.push({ id, name, department, marks });
+
+        simulateResponse({ message: "Student Added Successfully" }, 200)
+            .then(res => res.json())
+            .then(data => showMessage(data.message, "success"));
+    }
+
+    form.reset();
+    fetchStudents();
+});
+
+// DELETE
+function deleteStudent(id) {
+
+    const index = students.findIndex(s => s.id === id);
+
+    if (index === -1) {
+        simulateResponse(null, 404)
+            .catch(err => showMessage(err.message, "error"));
+        return;
+    }
+
+    students.splice(index, 1);
+
+    simulateResponse({ message: "Student Deleted Successfully" }, 200)
+        .then(res => res.json())
+        .then(data => {
+            showMessage(data.message, "success");
+            fetchStudents();
+        })
+        .catch(err => showMessage("Server Error", "error"));
+}
+
+// EDIT
+function editStudent(id) {
+    const student = students.find(s => s.id === id);
+    if (!student) return;
+
+    document.getElementById("studentId").value = student.id;
+    document.getElementById("name").value = student.name;
+    document.getElementById("department").value = student.department;
+    document.getElementById("marks").value = student.marks;
+}
+
+// Message Display
+function showMessage(msg, type) {
+    messageDiv.innerHTML = `<p class="${type}">${msg}</p>`;
+    setTimeout(() => messageDiv.innerHTML = "", 3000);
+}
+
+// Initial Load
+fetchStudents();
+
+</script>
+
+</body>
+</html>
